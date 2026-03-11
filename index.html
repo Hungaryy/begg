@@ -136,7 +136,7 @@
     <!-- 메인 화면 -->
     <div id="screen-menu" class="container active">
         <h1>📚 스마트 단어장</h1>
-        <div id="load-status">⏳ 드라이브에서 단어장을 불러오는 중...</div>
+        <div id="load-status">⏳ 서버에서 단어장을 불러오는 중...</div>
         
         <select id="day-select">
             <option value="wrong">⚠️ 내 오답 노트 퀴즈 풀기</option>
@@ -147,7 +147,7 @@
         <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ddd;">
 
         <h2>📁 외부 TXT 파일 직접 열기</h2>
-        <p style="font-size: 0.8em; color: #7f8c8d; margin-top: -10px; margin-bottom: 10px;">(자동 불러오기 실패 시에만 사용하세요)</p>
+        <p style="font-size: 0.8em; color: #7f8c8d; margin-top: -10px; margin-bottom: 10px;">(내장 단어장 외에 다른 파일을 쓸 때)</p>
         <label for="file-input" class="btn-upload" style="padding: 12px; border-radius: 8px; cursor: pointer;">
             수동으로 파일 선택하기
         </label>
@@ -201,24 +201,23 @@
         let currentQuestion;
         let isAnswered = false;
 
-        // 구글 드라이브 텍스트 자동 불러오기
+        // GitHub 리포지토리의 텍스트 파일 직접 불러오기 (가장 빠르고 안정적!)
         document.addEventListener('DOMContentLoaded', async () => {
             const statusEl = document.getElementById('load-status');
             try {
-                const fileId = '1bfaDWnH1gQSEvfMInAeJxdjdsp00qvfB';
-                const driveUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(driveUrl)}`;
+                // 같은 폴더에 올려둔 텍스트 파일 이름 (반드시 파일명을 맞춰주세요)
+                const response = await fetch('words.txt'); 
                 
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('네트워크 오류');
+                if (!response.ok) throw new Error('파일을 찾을 수 없습니다.');
+                
                 const text = await response.text();
-                
                 parseDataAndInit(text);
+                
                 statusEl.textContent = `✅ 단어장 자동 불러오기 완료! (총 ${wordData.length}개)`;
                 statusEl.style.color = '#2ecc71';
             } catch (error) {
                 console.error(error);
-                statusEl.textContent = '❌ 자동 로드 실패. 하단의 파일 선택을 이용해주세요.';
+                statusEl.textContent = '❌ 파일 로드 실패. 저장소에 words.txt 파일이 있는지 확인해주세요.';
                 statusEl.style.color = '#e74c3c';
             }
         });
@@ -363,7 +362,6 @@
         }
 
         function updateWrongCount() {
-            // 메인 화면과 퀴즈 화면의 카운트를 모두 업데이트
             const countElements = document.querySelectorAll('#wrong-count');
             countElements.forEach(el => el.innerText = wrongWords.length);
         }
