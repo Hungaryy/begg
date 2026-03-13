@@ -26,9 +26,11 @@
             display: none;
             max-height: 90vh;
             overflow-y: auto;
+            position: relative;
         }
         .active { display: block; }
         h1, h2 { color: #2c3e50; font-size: 1.5em; margin-bottom: 5px;}
+        
         select, input, button {
             width: 100%;
             padding: 12px;
@@ -49,442 +51,495 @@
         button:hover { background-color: #2980b9; }
         .btn-secondary { background-color: #95a5a6; }
         .btn-secondary:hover { background-color: #7f8c8d; }
-        .btn-upload { background-color: #e67e22; color: white; display: block; text-align: center; font-weight: bold; }
-        .btn-upload:hover { background-color: #d35400; }
-        .btn-wrong-manage { background-color: #8e44ad; }
-        .btn-wrong-manage:hover { background-color: #732d91; }
         
-        #word-display {
-            font-size: 2.2em;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #2c3e50;
+        /* 메인 메뉴 모드 버튼 */
+        .mode-btn-container { margin-top: 20px; }
+        .btn-memorize { background-color: #27ae60; font-size: 1.2em; padding: 20px; margin-bottom: 15px; }
+        .btn-memorize:hover { background-color: #219653; }
+        .btn-quiz { background-color: #34495e; font-size: 1.2em; padding: 20px; }
+        .btn-quiz:hover { background-color: #2c3e50; }
+        .btn-wrong-manage { background-color: #8e44ad; margin-top: 15px; }
+        
+        /* 💾 플로피 디스크 아이콘 버튼 */
+        .seed-btn-top {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            width: auto;
+            padding: 0;
+            margin: 0;
         }
-        .option-btn {
-            background-color: #ecf0f1;
-            color: #333;
-            border: 2px solid #bdc3c7;
-            text-align: left;
-            padding: 15px;
-            line-height: 1.4;
+
+        /* 상태바 */
+        #load-status { font-size: 0.85em; color: #e67e22; font-weight: bold; margin-bottom: 15px; }
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9em; color: #7f8c8d; border-bottom: 2px solid #eee; padding-bottom: 10px;
         }
+        .progress-text { font-weight: bold; color: #3498db; font-size: 1.1em; }
+
+        /* 퀴즈 모드 스타일 */
+        #word-display { font-size: 2.2em; font-weight: bold; margin: 20px 0; color: #2c3e50; }
+        .option-btn { background-color: #ecf0f1; color: #333; border: 2px solid #bdc3c7; text-align: left; padding: 15px; line-height: 1.4; }
         .option-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
         .option-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
         
-        #seed-display-area {
-            background: #eee;
-            padding: 15px;
-            border-radius: 5px;
-            word-break: break-all;
-            display: none;
-            margin-top: 10px;
-        }
-        #load-status {
-            font-size: 0.85em;
-            color: #e67e22;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .status-bar {
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            font-size: 0.9em; 
-            color: #7f8c8d; 
-            border-bottom: 2px solid #eee; 
-            padding-bottom: 10px;
-        }
-        #quiz-progress { font-weight: bold; color: #3498db; font-size: 1.1em; }
-        
-        /* 오답 관리 리스트 스타일 */
-        #wrong-list-container {
-            max-height: 350px; 
-            overflow-y: auto; 
-            text-align: left; 
-            margin-bottom: 20px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            padding: 10px; 
-            background: #fafafa;
-        }
-        .wrong-item {
+        /* 암기 모드(카드) 스타일 */
+        #card-container {
+            background-color: #fcfcfc;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 30px 20px;
+            margin: 20px 0;
+            min-height: 250px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            flex-direction: column;
+            justify-content: center;
+            user-select: none; /* 스와이프 시 텍스트 선택 방지 */
         }
+        .card-word { font-size: 2.5em; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+        .card-meaning { font-size: 1.2em; color: #e74c3c; font-weight: bold; margin-bottom: 25px; }
+        .card-example { font-size: 1em; color: #555; font-style: italic; margin-bottom: 10px; line-height: 1.4; text-align: left; }
+        .card-translation { font-size: 0.95em; color: #7f8c8d; line-height: 1.4; text-align: left; }
+        .highlight { background-color: #ffeaa7; font-weight: bold; color: #d35400; padding: 0 2px; border-radius: 3px; }
+        .swipe-hint { font-size: 0.8em; color: #bdc3c7; margin-top: 10px; }
+
+        /* 모달(팝업) 스타일 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; padding: 25px; border-radius: 12px; width: 85%; max-width: 350px; text-align: center;
+        }
+        #seed-display-area { background: #eee; padding: 15px; border-radius: 5px; word-break: break-all; display: none; margin-top: 10px; }
+        
+        /* 오답 리스트 */
+        #wrong-list-container { max-height: 350px; overflow-y: auto; text-align: left; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fafafa; }
+        .wrong-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .wrong-item:last-child { border-bottom: none; }
         .wrong-word-text { font-weight: bold; color: #2c3e50; font-size: 1.1em; }
         .wrong-meaning-text { font-size: 0.9em; color: #7f8c8d; margin-top: 3px; }
-        .btn-delete {
-            background-color: #ff7675;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            width: auto;
-            padding: 8px 12px;
-            cursor: pointer;
-            margin: 0 0 0 10px;
-            font-size: 0.9em;
-        }
-        .btn-delete:hover { background-color: #d63031; }
-        
-        .auto-save-notice {
-            font-size: 0.75em;
-            color: #27ae60;
-            margin-top: -10px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
+        .btn-delete { background-color: #ff7675; color: white; border: none; border-radius: 5px; width: auto; padding: 8px 12px; margin: 0 0 0 10px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <!-- 메인 화면 -->
     <div id="screen-menu" class="container active">
+        <button class="seed-btn-top" onclick="openSeedModal()">💾</button>
         <h1>📚 스마트 단어장</h1>
-        <div class="auto-save-notice">💾 오답 노트는 이 기기에 자동 저장됩니다.</div>
+        <div style="font-size: 0.75em; color: #27ae60; font-weight: bold; margin-bottom: 10px;">기기에 오답 자동 저장 중</div>
         <div id="load-status">⏳ 서버에서 단어장을 불러오는 중...</div>
         
-        <select id="day-select">
-            <option value="wrong">⚠️ 내 오답 노트 퀴즈 풀기</option>
-        </select>
-        <button onclick="startQuiz()">학습 시작</button>
-        <button class="btn-wrong-manage" onclick="showWrongList()">📝 오답 단어 목록 보기 및 관리</button>
-
-        <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ddd;">
-        
-        <h2>📱 기기 이동용 시드(Seed)</h2>
-        <p style="font-size: 0.8em; color: #7f8c8d; margin-top: -10px; margin-bottom: 10px;">(다른 폰이나 PC로 오답을 옮길 때만 사용)</p>
-        <button class="btn-secondary" onclick="generateSeed()">초압축 저장코드(Seed) 발급</button>
-        <div id="seed-display-area"></div>
-
-        <input type="text" id="seed-input" placeholder="여기에 시드 코드를 붙여넣으세요">
-        <button class="btn-secondary" onclick="loadSeed()">시드 코드로 오답 병합하기</button>
+        <div class="mode-btn-container">
+            <button class="btn-memorize" onclick="showDaySelect('memorize')">📖 암기하기 (단어 학습)</button>
+            <button class="btn-quiz" onclick="showDaySelect('quiz')">✍️ 문제 맞추기 (퀴즈)</button>
+        </div>
+        <button class="btn-wrong-manage" onclick="showWrongList()">📝 오답 단어 목록 관리</button>
     </div>
 
-    <!-- 퀴즈 화면 -->
+    <div id="screen-day-select" class="container">
+        <h2 id="day-select-title">학습할 파트 선택</h2>
+        <select id="day-select">
+            </select>
+        <button id="btn-start-action" onclick="startMode()">시작하기</button>
+        <button class="btn-secondary" onclick="showMenu()">뒤로 가기</button>
+    </div>
+
+    <div id="screen-memorize" class="container">
+        <div class="status-bar">
+            <span id="memo-mode-title" style="font-weight: bold; flex: 1; text-align: left;">Day 1</span>
+            <span id="memo-progress" class="progress-text" style="flex: 1; text-align: right;">0 / 0</span>
+        </div>
+        
+        <div id="card-container">
+            <div id="card-word" class="card-word">Loading...</div>
+            <div id="card-meaning" class="card-meaning"></div>
+            <div id="card-example" class="card-example"></div>
+            <div id="card-translation" class="card-translation"></div>
+        </div>
+        <div class="swipe-hint">👈 좌우로 스와이프해서 다음 단어로 👉</div>
+        
+        <button class="btn-secondary" style="margin-top: 20px;" onclick="showMenu()">도중에 그만하기</button>
+    </div>
+
     <div id="screen-quiz" class="container">
         <div class="status-bar">
             <span id="quiz-mode-title" style="font-weight: bold; flex: 1; text-align: left;">Day 1</span>
-            <span id="quiz-progress" style="flex: 1; text-align: center;">0 / 0</span>
+            <span id="quiz-progress" class="progress-text" style="flex: 1; text-align: center;">0 / 0</span>
             <span style="flex: 1; text-align: right;">오답 누적: <strong id="wrong-count" style="color:#e74c3c;">0</strong>개</span>
         </div>
         
         <div id="word-display">Loading...</div>
         <div id="options-container"></div>
         
-        <button id="next-btn" style="display: none; margin-top: 20px; background-color: #2ecc71;" onclick="nextQuestion()">다음 단어 ➔</button>
+        <button id="next-btn" style="display: none; margin-top: 20px; background-color: #2ecc71;" onclick="nextQuizQuestion()">다음 문제 ➔</button>
         <button class="btn-secondary" style="margin-top: 10px;" onclick="showMenu()">도중에 그만하기</button>
     </div>
 
-    <!-- 오답 관리 화면 -->
     <div id="screen-wrong-list" class="container">
-        <h2>📝 내 오답 노트 관리</h2>
+        <h2>📝 오답 노트 관리</h2>
         <div style="text-align: right; margin-bottom: 10px;">
             <button onclick="clearAllWrongWords()" style="width: auto; padding: 8px 15px; background-color: #e74c3c; font-size: 0.9em; border-radius: 5px;">전체 일괄 삭제 🗑️</button>
         </div>
-        
-        <div id="wrong-list-container">
-            <!-- 오답 리스트가 자바스크립트에 의해 여기에 들어갑니다 -->
-        </div>
-        
+        <div id="wrong-list-container"></div>
         <button class="btn-secondary" onclick="showMenu()">메인으로 돌아가기</button>
     </div>
 
+    <div id="modal-seed" class="modal-overlay">
+        <div class="modal-content">
+            <h2>💾 데이터 백업/복원</h2>
+            <p style="font-size: 0.8em; color: #7f8c8d; margin-top: -10px;">(다른 기기로 옮길 때만 사용)</p>
+            <button onclick="generateSeed()">초압축 저장코드(Seed) 발급</button>
+            <div id="seed-display-area"></div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <input type="text" id="seed-input" placeholder="시드 코드를 붙여넣으세요">
+            <button class="btn-secondary" onclick="loadSeed()">시드 코드로 병합하기</button>
+            <button class="btn-secondary" style="margin-top: 15px; background-color: #95a5a6;" onclick="closeSeedModal()">닫기</button>
+        </div>
+    </div>
+
     <script>
-        let wordData = [];
-        let wrongWords = [];
-        let currentQuizList = [];
-        let totalWords = 0;
+        let wordData = [];      // 단어 정보 보관 (Day, Word, Meaning, Example, Translation)
+        let wrongWords = [];    // 오답 기록 배열
+        let currentList = [];   // 현재 학습 중인 리스트
+        let totalItems = 0;
         let currentIndex = 0;
-        let currentQuestion;
         let isAnswered = false;
+        let currentMode = '';   // 'memorize' 또는 'quiz'
 
-        // --- 1. 자동 저장 기능 (로컬 스토리지) ---
-        function saveToLocalStorage() {
-            localStorage.setItem('mySmartWords', JSON.stringify(wrongWords));
-        }
+        // 스와이프를 위한 변수
+        let touchStartX = 0;
+        let touchEndX = 0;
 
+        // --- 자동 저장 로컬 스토리지 ---
+        function saveToLocalStorage() { localStorage.setItem('mySmartWords', JSON.stringify(wrongWords)); }
         function loadFromLocalStorage() {
             const saved = localStorage.getItem('mySmartWords');
             if (saved) {
-                try {
-                    wrongWords = JSON.parse(saved);
-                    updateWrongCount();
-                } catch (e) {
-                    console.error("오답 데이터 불러오기 실패", e);
-                }
+                try { wrongWords = JSON.parse(saved); updateWrongCount(); } 
+                catch (e) { console.error(e); }
             }
         }
-        // ----------------------------------------
 
-        // GitHub 리포지토리의 텍스트 파일 불러오기
+        // --- 데이터 불러오기 (words.txt + examples.txt 병합) ---
         document.addEventListener('DOMContentLoaded', async () => {
             const statusEl = document.getElementById('load-status');
             try {
-                const response = await fetch('words.txt'); 
-                if (!response.ok) throw new Error('파일을 찾을 수 없습니다.');
-                
-                const text = await response.text();
-                parseDataAndInit(text);
-                
-                // 단어장을 다 불러온 후 폰에 저장된 오답을 꺼내옵니다.
-                loadFromLocalStorage(); 
+                // 두 파일을 동시에 불러옵니다. (examples.txt가 없으면 에러가 나지 않고 빈 텍스트 처리)
+                const [wordsRes, examplesRes] = await Promise.all([
+                    fetch('words.txt').catch(() => null),
+                    fetch('examples.txt').catch(() => null)
+                ]);
 
-                statusEl.textContent = `✅ 단어장 로드 완료! (총 ${wordData.length}개)`;
+                if (!wordsRes || !wordsRes.ok) throw new Error('words.txt를 찾을 수 없습니다.');
+                
+                const wordsText = await wordsRes.text();
+                const examplesText = (examplesRes && examplesRes.ok) ? await examplesRes.text() : '';
+                
+                parseAndMergeData(wordsText, examplesText);
+                loadFromLocalStorage();
+
+                statusEl.textContent = `✅ 로드 완료! (단어 ${wordData.length}개)`;
                 statusEl.style.color = '#2ecc71';
             } catch (error) {
-                console.error(error);
-                statusEl.textContent = '❌ 파일 로드 실패. GitHub 저장소에 words.txt가 있나요?';
+                statusEl.textContent = '❌ 파일 로드 실패. 저장소에 words.txt 가 있는지 확인하세요.';
                 statusEl.style.color = '#e74c3c';
             }
         });
 
-        // 데이터 파싱 및 셋팅
-        function parseDataAndInit(rawDataStr) {
-            wordData = rawDataStr.trim().split('\n').map(line => {
+        function parseAndMergeData(wordsText, examplesText) {
+            // 1. words.txt 파싱
+            wordData = wordsText.trim().split('\n').map(line => {
                 const parts = line.split('|');
                 if (parts.length >= 3) {
-                    return { day: parseInt(parts[0].trim()), word: parts[1].trim(), meaning: parts[2].trim() };
+                    return { 
+                        day: parseInt(parts[0].trim()), 
+                        word: parts[1].trim(), 
+                        meaning: parts[2].trim(),
+                        example: '', 
+                        translation: '' 
+                    };
                 }
                 return null;
             }).filter(item => item !== null && !isNaN(item.day));
 
-            updateDaySelect();
+            // 2. examples.txt 파싱 및 병합 (형식: word | meaning | example | translation)
+            if (examplesText) {
+                const exampleLines = examplesText.trim().split('\n');
+                exampleLines.forEach(line => {
+                    const parts = line.split('|');
+                    if (parts.length >= 4) {
+                        const targetWord = parts[0].trim().toLowerCase();
+                        // wordData에서 해당 단어를 찾아 예문 삽입
+                        const matchedItem = wordData.find(w => w.word.toLowerCase() === targetWord);
+                        if (matchedItem) {
+                            matchedItem.example = parts[2].trim();
+                            matchedItem.translation = parts[3].trim();
+                        }
+                    }
+                });
+            }
+            updateDaySelectUI();
         }
 
-        function updateDaySelect() {
-            const daySelect = document.getElementById('day-select');
-            daySelect.innerHTML = '<option value="wrong">⚠️ 내 오답 노트 퀴즈 풀기</option>';
-            
+        function updateDaySelectUI() {
+            const selectEl = document.getElementById('day-select');
+            selectEl.innerHTML = '<option value="wrong">⚠️ 내 오답 노트 전용</option>';
             const uniqueDays = [...new Set(wordData.map(item => item.day))].sort((a,b)=>a-b);
             uniqueDays.forEach(day => {
                 const option = document.createElement('option');
                 option.value = day;
-                option.textContent = `Day ${day} 학습하기`;
-                daySelect.appendChild(option);
+                option.textContent = `Day ${day}`;
+                selectEl.appendChild(option);
             });
         }
 
-        // 화면 전환
+        // --- 화면 전환 ---
         function showScreen(screenId) {
             document.querySelectorAll('.container').forEach(el => el.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
         function showMenu() { showScreen('screen-menu'); updateWrongCount(); }
 
-        // --- 오답 단어장 보기 및 관리 기능 ---
-        function showWrongList() {
-            showScreen('screen-wrong-list');
-            renderWrongList();
-        }
-
-        function renderWrongList() {
-            const container = document.getElementById('wrong-list-container');
-            container.innerHTML = '';
-
-            if (wrongWords.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 30px 10px;">등록된 오답이 없습니다!<br>퀴즈를 풀며 틀린 단어를 모아보세요. 🎉</div>';
-                return;
+        // --- Day 선택창 띄우기 ---
+        function showDaySelect(mode) {
+            if (wordData.length === 0) {
+                alert("아직 단어장이 로드되지 않았습니다."); return;
             }
-
-            [...wrongWords].reverse().forEach(wordStr => {
-                const wordObj = wordData.find(item => item.word === wordStr);
-                const meaning = wordObj ? wordObj.meaning : '뜻을 찾을 수 없음';
-
-                const div = document.createElement('div');
-                div.className = 'wrong-item';
-                div.innerHTML = `
-                    <div style="flex: 1;">
-                        <div class="wrong-word-text">${wordStr}</div>
-                        <div class="wrong-meaning-text">${meaning}</div>
-                    </div>
-                    <button class="btn-delete" onclick="removeWrongWord('${wordStr}')">삭제</button>
-                `;
-                container.appendChild(div);
-            });
+            currentMode = mode;
+            document.getElementById('day-select-title').innerText = mode === 'memorize' ? '📖 암기할 파트 선택' : '✍️ 퀴즈 풀 파트 선택';
+            showScreen('screen-day-select');
         }
 
-        function removeWrongWord(wordToRemove) {
-            wrongWords = wrongWords.filter(w => w !== wordToRemove);
-            saveToLocalStorage(); // 변경 시 자동 저장
-            updateWrongCount();
-            renderWrongList(); 
-        }
-
-        function clearAllWrongWords() {
-            if (wrongWords.length === 0) return;
-            if (confirm("정말 오답 노트를 모두 초기화(전체 삭제) 하시겠습니까?")) {
-                wrongWords = [];
-                saveToLocalStorage(); // 변경 시 자동 저장
-                updateWrongCount();
-                renderWrongList();
-            }
-        }
-        // ------------------------------------
-
-        // --- 2. 초압축 시드(Seed) 기능 ---
-        function generateSeed() {
-            if (wrongWords.length === 0) {
-                alert("아직 틀린 단어가 없습니다!");
-                return;
-            }
-            // 단어의 Index 번호를 2자리 Base36(00~zz)로 바꾸고 마침표 없이 합칩니다.
-            const seed = wrongWords.map(word => {
-                const index = wordData.findIndex(item => item.word === word);
-                if (index !== -1) {
-                    return index.toString(36).padStart(2, '0');
-                }
-                return '';
-            }).join('');
-
-            const displayArea = document.getElementById('seed-display-area');
-            displayArea.style.display = 'block';
-            displayArea.innerHTML = `<strong>아래 코드를 복사해두세요:</strong><br><br>
-                <span style="font-size: 1.4em; color: #e74c3c; font-weight: bold; letter-spacing: 2px; word-break: break-all;">${seed}</span>`;
-        }
-
-        function loadSeed() {
-            const seedInput = document.getElementById('seed-input').value.trim();
-            if (!seedInput) {
-                alert("시드 코드를 입력해주세요.");
-                return;
-            }
-            try {
-                // 입력받은 코드를 2글자씩 자릅니다.
-                const chunks = seedInput.match(/.{1,2}/g) || [];
-                const indices = chunks.map(str => parseInt(str, 36));
-                
-                // 인덱스를 바탕으로 단어를 찾습니다.
-                const importedWords = indices.map(index => wordData[index]?.word).filter(Boolean);
-                
-                if (importedWords.length > 0) {
-                    // 기존 오답과 새로 불러온 오답을 합치고 중복을 제거합니다.
-                    wrongWords = [...new Set([...wrongWords, ...importedWords])];
-                    saveToLocalStorage(); // 합친 데이터 자동 저장
-                    updateWrongCount();
-                    
-                    alert(`${importedWords.length}개의 오답 기록을 성공적으로 병합했습니다!`);
-                    document.getElementById('seed-input').value = '';
-                } else {
-                    alert("코드에 해당하는 단어를 찾을 수 없습니다.");
-                }
-            } catch (e) {
-                alert("잘못된 시드 코드입니다. 다시 확인해주세요.");
-            }
-        }
-        // -----------------------
-
-        function updateWrongCount() {
-            const countElements = document.querySelectorAll('#wrong-count');
-            countElements.forEach(el => el.innerText = wrongWords.length);
-        }
-
-        // 퀴즈 시작 및 진행 로직
-        function startQuiz() {
+        // 모드 시작 버튼
+        function startMode() {
             const selectedDay = document.getElementById('day-select').value;
             
-            if (wordData.length === 0) {
-                alert("아직 단어장이 로드되지 않았습니다. 잠시만 기다려주세요.");
-                return;
-            }
-
+            // 리스트 필터링
             if (selectedDay === 'wrong') {
-                if (wrongWords.length === 0) {
-                    alert("오답 노트가 비어있습니다. 먼저 학습을 진행해주세요!");
-                    return;
-                }
-                currentQuizList = wordData.filter(item => wrongWords.includes(item.word));
-                document.getElementById('quiz-mode-title').innerText = "오답 복습 퀴즈";
+                if (wrongWords.length === 0) { alert("오답 노트가 비어있습니다!"); return; }
+                currentList = wordData.filter(item => wrongWords.includes(item.word));
             } else {
-                currentQuizList = wordData.filter(item => item.day == selectedDay);
-                document.getElementById('quiz-mode-title').innerText = `Day ${selectedDay}`;
+                currentList = wordData.filter(item => item.day == selectedDay);
             }
 
-            if (currentQuizList.length === 0) {
-                alert("해당 파트에 단어가 없습니다.");
-                return;
-            }
+            if (currentList.length === 0) return;
 
-            currentQuizList = shuffleArray(currentQuizList);
-            totalWords = currentQuizList.length;
+            // 순서 섞기 (퀴즈는 무조건, 암기도 덜 지루하게 섞음)
+            currentList = shuffleArray([...currentList]);
+            totalItems = currentList.length;
             currentIndex = 0;
 
-            showScreen('screen-quiz');
-            loadQuestion();
+            if (currentMode === 'memorize') {
+                document.getElementById('memo-mode-title').innerText = selectedDay === 'wrong' ? "오답 암기" : `Day ${selectedDay} 암기`;
+                showScreen('screen-memorize');
+                loadMemoCard();
+            } else {
+                document.getElementById('quiz-mode-title').innerText = selectedDay === 'wrong' ? "오답 퀴즈" : `Day ${selectedDay} 퀴즈`;
+                showScreen('screen-quiz');
+                loadQuizQuestion();
+            }
         }
 
         function shuffleArray(array) {
-            let arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
+            for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
+                [array[i], array[j]] = [array[j], array[i]];
             }
-            return arr;
+            return array;
         }
 
-        function loadQuestion() {
-            if (currentIndex >= totalWords) {
-                alert("🎉 이번 파트의 모든 단어 학습을 완료했습니다!");
-                showMenu();
-                return;
-            }
+        // --- 하이라이트(형광펜) 함수 ---
+        function applyHighlight(text, keyword) {
+            if (!text || !keyword) return text;
+            
+            // 키워드가 콤마(,)로 구분되어 여러 개인 경우 처리 (예: "지원자, 신청자")
+            const keywords = keyword.split(',').map(k => k.trim()).filter(k => k);
+            let highlightedText = text;
+            
+            keywords.forEach(k => {
+                // 정규식 특수문자 이스케이프 및 대소문자 무시(i) 적용
+                const regex = new RegExp('(' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+            });
+            return highlightedText;
+        }
 
+        // --- 📖 암기 모드 로직 ---
+        function loadMemoCard() {
+            document.getElementById('memo-progress').innerText = `${currentIndex + 1} / ${totalItems}`;
+            const item = currentList[currentIndex];
+            
+            document.getElementById('card-word').textContent = item.word;
+            document.getElementById('card-meaning').textContent = item.meaning;
+            
+            // 예문과 번역이 있으면 하이라이트를 적용하여 삽입, 없으면 숨김
+            const exampleDiv = document.getElementById('card-example');
+            const translationDiv = document.getElementById('card-translation');
+            
+            if (item.example) {
+                exampleDiv.style.display = 'block';
+                translationDiv.style.display = 'block';
+                exampleDiv.innerHTML = applyHighlight(item.example, item.word); // 영단어 하이라이트
+                translationDiv.innerHTML = applyHighlight(item.translation, item.meaning); // 뜻 하이라이트
+            } else {
+                exampleDiv.style.display = 'none';
+                translationDiv.style.display = 'none';
+            }
+        }
+
+        // 스와이프 이벤트 설정 (암기 모드 컨테이너)
+        const cardContainer = document.getElementById('card-container');
+        cardContainer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+        cardContainer.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const threshold = 50; // 스와이프 민감도
+            if (touchStartX - touchEndX > threshold) {
+                // 왼쪽으로 스와이프 -> 다음 단어
+                if (currentIndex < totalItems - 1) {
+                    currentIndex++;
+                    loadMemoCard();
+                } else {
+                    alert("마지막 단어입니다!");
+                }
+            } else if (touchEndX - touchStartX > threshold) {
+                // 오른쪽으로 스와이프 -> 이전 단어
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    loadMemoCard();
+                }
+            }
+        }
+
+        // --- ✍️ 퀴즈 모드 로직 ---
+        function loadQuizQuestion() {
+            if (currentIndex >= totalItems) {
+                alert("🎉 이번 파트의 모든 퀴즈를 완료했습니다!");
+                showMenu(); return;
+            }
             isAnswered = false;
             document.getElementById('next-btn').style.display = 'none';
             const optionsContainer = document.getElementById('options-container');
             optionsContainer.innerHTML = '';
             
-            document.getElementById('quiz-progress').innerText = `${currentIndex + 1} / ${totalWords}`;
+            document.getElementById('quiz-progress').innerText = `${currentIndex + 1} / ${totalItems}`;
             updateWrongCount();
 
-            currentQuestion = currentQuizList[currentIndex];
-            document.getElementById('word-display').textContent = currentQuestion.word;
+            const item = currentList[currentIndex];
+            document.getElementById('word-display').textContent = item.word;
 
-            let wrongOptions = wordData.filter(item => item.word !== currentQuestion.word);
+            let wrongOptions = wordData.filter(w => w.word !== item.word);
             wrongOptions = shuffleArray(wrongOptions).slice(0, 3);
-
-            let allOptions = shuffleArray([currentQuestion, ...wrongOptions]);
+            let allOptions = shuffleArray([item, ...wrongOptions]);
 
             allOptions.forEach(option => {
-                const button = document.createElement('button');
-                button.classList.add('option-btn');
-                button.textContent = option.meaning;
-                button.onclick = () => checkAnswer(button, option.word === currentQuestion.word);
-                optionsContainer.appendChild(button);
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option.meaning;
+                btn.onclick = () => checkQuizAnswer(btn, option.word === item.word, item);
+                optionsContainer.appendChild(btn);
             });
         }
 
-        function checkAnswer(selectedBtn, isCorrect) {
+        function checkQuizAnswer(selectedBtn, isCorrect, currentItem) {
             if (isAnswered) return;
             isAnswered = true;
-
-            const allButtons = document.querySelectorAll('.option-btn');
+            const allBtns = document.querySelectorAll('.option-btn');
             
             if (isCorrect) {
                 selectedBtn.classList.add('correct');
             } else {
                 selectedBtn.classList.add('wrong');
-                allButtons.forEach(btn => {
-                    if (btn.textContent === currentQuestion.meaning) btn.classList.add('correct');
-                });
-                
-                // 오답 추가 및 로컬 스토리지에 즉시 저장
-                if (!wrongWords.includes(currentQuestion.word)) {
-                    wrongWords.push(currentQuestion.word);
-                    saveToLocalStorage(); 
+                allBtns.forEach(b => { if (b.textContent === currentItem.meaning) b.classList.add('correct'); });
+                if (!wrongWords.includes(currentItem.word)) {
+                    wrongWords.push(currentItem.word);
+                    saveToLocalStorage();
                 }
             }
-            
             updateWrongCount();
             document.getElementById('next-btn').style.display = 'block';
         }
 
-        function nextQuestion() {
+        function nextQuizQuestion() {
             currentIndex++;
-            loadQuestion();
+            loadQuizQuestion();
+        }
+
+        // --- 오답 리스트 관리 ---
+        function showWrongList() { showScreen('screen-wrong-list'); renderWrongList(); }
+        function renderWrongList() {
+            const container = document.getElementById('wrong-list-container');
+            container.innerHTML = '';
+            if (wrongWords.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #7f8c8d;">오답이 없습니다!</div>'; return;
+            }
+            [...wrongWords].reverse().forEach(wStr => {
+                const item = wordData.find(w => w.word === wStr);
+                const meaning = item ? item.meaning : '-';
+                const div = document.createElement('div');
+                div.className = 'wrong-item';
+                div.innerHTML = `
+                    <div style="flex: 1;">
+                        <div class="wrong-word-text">${wStr}</div>
+                        <div class="wrong-meaning-text">${meaning}</div>
+                    </div>
+                    <button class="btn-delete" onclick="removeWrongWord('${wStr}')">삭제</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+        function removeWrongWord(word) {
+            wrongWords = wrongWords.filter(w => w !== word);
+            saveToLocalStorage(); updateWrongCount(); renderWrongList();
+        }
+        function clearAllWrongWords() {
+            if (confirm("정말 모든 오답을 초기화하시겠습니까?")) {
+                wrongWords = []; saveToLocalStorage(); updateWrongCount(); renderWrongList();
+            }
+        }
+        function updateWrongCount() {
+            const els = document.querySelectorAll('#wrong-count');
+            els.forEach(el => el.innerText = wrongWords.length);
+        }
+
+        // --- 모달 & 시드 기능 ---
+        function openSeedModal() { document.getElementById('modal-seed').style.display = 'flex'; }
+        function closeSeedModal() { document.getElementById('modal-seed').style.display = 'none'; }
+        
+        function generateSeed() {
+            if (wrongWords.length === 0) { alert("저장할 오답이 없습니다!"); return; }
+            const seed = wrongWords.map(word => {
+                const index = wordData.findIndex(item => item.word === word);
+                return index !== -1 ? index.toString(36).padStart(2, '0') : '';
+            }).join('');
+            const displayArea = document.getElementById('seed-display-area');
+            displayArea.style.display = 'block';
+            displayArea.innerHTML = `<span style="font-size: 1.4em; color: #e74c3c; font-weight: bold; letter-spacing: 2px;">${seed}</span>`;
+        }
+
+        function loadSeed() {
+            const input = document.getElementById('seed-input').value.trim();
+            if (!input) { alert("코드를 입력하세요."); return; }
+            try {
+                const chunks = input.match(/.{1,2}/g) || [];
+                const importedWords = chunks.map(str => wordData[parseInt(str, 36)]?.word).filter(Boolean);
+                if (importedWords.length > 0) {
+                    wrongWords = [...new Set([...wrongWords, ...importedWords])];
+                    saveToLocalStorage(); updateWrongCount();
+                    alert(`${importedWords.length}개의 오답을 병합했습니다!`);
+                    document.getElementById('seed-input').value = '';
+                    closeSeedModal();
+                } else { alert("해당하는 단어가 없습니다."); }
+            } catch (e) { alert("잘못된 코드입니다."); }
         }
     </script>
 </body>
