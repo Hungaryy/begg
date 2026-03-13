@@ -91,6 +91,20 @@
         .option-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
         .option-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
         
+        /* 퀴즈 다음 문제 버튼 상태 변경 (흔들림 방지) */
+        #next-btn {
+            margin-top: 20px;
+            background-color: #2ecc71;
+        }
+        #next-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        #next-btn:not(:disabled):hover {
+            background-color: #27ae60;
+        }
+
         /* 📖 암기 모드(카드) 최적화 스타일 */
         #card-container {
             background-color: #fcfcfc;
@@ -98,14 +112,13 @@
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
-            height: 40vh; /* 카드 높이 고정 (화면 점프 방지) */
+            height: 40vh; 
             min-height: 280px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             user-select: none;
             overflow-y: auto;
-            /* 좌우 스와이프 시 상하 스크롤 흔들림 방지 */
             touch-action: pan-y; 
         }
         .card-word { font-size: 2.3em; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
@@ -186,7 +199,8 @@
         <div id="word-display">Loading...</div>
         <div id="options-container"></div>
         
-        <button id="next-btn" style="display: none; margin-top: 20px; background-color: #2ecc71;" onclick="nextQuizQuestion()">다음 문제 ➔</button>
+        <button id="next-btn" disabled onclick="nextQuizQuestion()">다음 문제 ➔</button>
+        
         <button class="btn-secondary" style="margin-top: 10px;" onclick="showMenu()">도중에 그만하기</button>
     </div>
 
@@ -215,7 +229,7 @@
     <script>
         let wordData = [];      
         let wrongWords = [];    
-        let completedDays = { memorize: [], quiz: [] }; // ✅ 학습 완료 체크 데이터
+        let completedDays = { memorize: [], quiz: [] }; 
 
         let currentList = [];   
         let totalItems = 0;
@@ -324,7 +338,6 @@
                 const option = document.createElement('option');
                 option.value = day;
                 
-                // 모드에 따라 해당 Day 완료 여부 확인 후 체크(✅) 추가
                 let isCompleted = false;
                 if (mode === 'memorize' && completedDays.memorize.includes(day)) isCompleted = true;
                 if (mode === 'quiz' && completedDays.quiz.includes(day)) isCompleted = true;
@@ -384,13 +397,12 @@
 
         // --- 📖 암기 모드 로직 ---
         function loadMemoCard() {
-            // 모든 카드를 다 보았을 때 (완료 처리)
             if (currentIndex >= totalItems) {
                 alert("🎉 이번 파트의 단어 학습을 완료했습니다!");
                 const selectedDay = document.getElementById('day-select').value;
                 if (selectedDay !== 'wrong' && !completedDays.memorize.includes(Number(selectedDay))) {
                     completedDays.memorize.push(Number(selectedDay));
-                    saveToLocalStorage(); // 완료 기록 저장
+                    saveToLocalStorage(); 
                 }
                 showMenu();
                 return;
@@ -416,7 +428,6 @@
             }
         }
 
-        // 안정적인 스와이프 처리
         const cardContainer = document.getElementById('card-container');
         cardContainer.addEventListener('touchstart', e => { 
             touchStartX = e.changedTouches[0].screenX; 
@@ -430,31 +441,32 @@
             const threshold = 50; 
             if (touchStartX - touchEndX > threshold) {
                 currentIndex++;
-                loadMemoCard(); // 왼쪽 스와이프 (다음 단어)
+                loadMemoCard(); 
             } else if (touchEndX - touchStartX > threshold) {
                 if (currentIndex > 0) {
                     currentIndex--;
-                    loadMemoCard(); // 오른쪽 스와이프 (이전 단어)
+                    loadMemoCard(); 
                 }
             }
         }
 
         // --- ✍️ 퀴즈 모드 로직 ---
         function loadQuizQuestion() {
-            // 모든 퀴즈를 맞췄을 때 (완료 처리)
             if (currentIndex >= totalItems) {
                 alert("🎉 이번 파트의 퀴즈를 완료했습니다!");
                 const selectedDay = document.getElementById('day-select').value;
                 if (selectedDay !== 'wrong' && !completedDays.quiz.includes(Number(selectedDay))) {
                     completedDays.quiz.push(Number(selectedDay));
-                    saveToLocalStorage(); // 완료 기록 저장
+                    saveToLocalStorage(); 
                 }
                 showMenu(); 
                 return;
             }
 
             isAnswered = false;
-            document.getElementById('next-btn').style.display = 'none';
+            // 버튼을 숨기지 않고 비활성화 상태로 둡니다.
+            document.getElementById('next-btn').disabled = true;
+            
             const optionsContainer = document.getElementById('options-container');
             optionsContainer.innerHTML = '';
             
@@ -493,7 +505,9 @@
                 }
             }
             updateWrongCount();
-            document.getElementById('next-btn').style.display = 'block';
+            
+            // 답을 고르면 비활성화된 버튼을 클릭 가능하게 활성화시킵니다.
+            document.getElementById('next-btn').disabled = false;
         }
 
         function nextQuizQuestion() {
