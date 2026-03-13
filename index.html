@@ -63,6 +63,12 @@
         .btn-wrong-manage { background-color: #8e44ad; margin-top: 15px; }
         .btn-wrong-manage:hover { background-color: #732d91; }
         
+        /* 완료 화면 버튼 */
+        .btn-go-quiz { background-color: #34495e; }
+        .btn-go-quiz:hover { background-color: #2c3e50; }
+        .btn-next-day { background-color: #27ae60; }
+        .btn-next-day:hover { background-color: #219653; }
+
         /* 💾 플로피 디스크 아이콘 버튼 */
         .seed-btn-top {
             position: absolute;
@@ -105,7 +111,7 @@
             background-color: #27ae60;
         }
 
-        /* 📖 암기 모드(카드) 최적화 스타일 */
+        /* 📖 암기 모드(카드) 스타일 */
         #card-container {
             background-color: #fcfcfc;
             border: 2px solid #eee;
@@ -189,6 +195,15 @@
         <button class="btn-secondary" style="margin-top: 20px;" onclick="showMenu()">도중에 그만하기</button>
     </div>
 
+    <div id="screen-memo-complete" class="container">
+        <h2 style="font-size: 2em; margin-bottom: 10px;">🎉 학습 완료!</h2>
+        <p id="memo-complete-msg" style="font-size: 1.1em; color: #555; margin-bottom: 30px;">Day 1 암기를 모두 마쳤습니다.</p>
+        
+        <button id="btn-go-quiz" class="btn-go-quiz">✍️ 방금 외운 단어 퀴즈 풀기</button>
+        <button id="btn-next-day" class="btn-next-day" style="display: none;">⏭️ 다음 파트 암기하기</button>
+        <button class="btn-secondary" onclick="showMenu()">🏠 메인 화면으로</button>
+    </div>
+
     <div id="screen-quiz" class="container">
         <div class="status-bar">
             <span id="quiz-mode-title" style="font-weight: bold; flex: 1; text-align: left;">Day 1</span>
@@ -200,7 +215,6 @@
         <div id="options-container"></div>
         
         <button id="next-btn" disabled onclick="nextQuizQuestion()">다음 문제 ➔</button>
-        
         <button class="btn-secondary" style="margin-top: 10px;" onclick="showMenu()">도중에 그만하기</button>
     </div>
 
@@ -236,6 +250,7 @@
         let currentIndex = 0;
         let isAnswered = false;
         let currentMode = '';   
+        let currentSelectedDay = ''; // 현재 학습 중인 Day 저장용
 
         let touchStartX = 0;
         let touchEndX = 0;
@@ -256,7 +271,7 @@
             }
         }
 
-        // --- 데이터 불러오기 (words.txt + examples.txt 병합) ---
+        // --- 데이터 불러오기 ---
         document.addEventListener('DOMContentLoaded', async () => {
             const statusEl = document.getElementById('load-status');
             try {
@@ -319,15 +334,13 @@
         }
         function showMenu() { showScreen('screen-menu'); updateWrongCount(); }
 
-        // --- Day 선택창 띄우기 (완료 체크(✅) 표시 포함) ---
+        // --- Day 선택창 띄우기 ---
         function showDaySelect(mode) {
             if (wordData.length === 0) {
                 alert("아직 단어장이 로드되지 않았습니다."); return;
             }
             currentMode = mode;
             document.getElementById('day-select-title').innerText = mode === 'memorize' ? '📖 암기할 파트 선택' : '✍️ 퀴즈 풀 파트 선택';
-            
-            // 퀴즈 탭일 때만 오답 관리 버튼 보이기
             document.getElementById('btn-wrong-manage-quiz').style.display = (mode === 'quiz') ? 'block' : 'none';
 
             const selectEl = document.getElementById('day-select');
@@ -350,13 +363,13 @@
         }
 
         function startMode() {
-            const selectedDay = document.getElementById('day-select').value;
+            currentSelectedDay = document.getElementById('day-select').value;
             
-            if (selectedDay === 'wrong') {
+            if (currentSelectedDay === 'wrong') {
                 if (wrongWords.length === 0) { alert("오답 노트가 비어있습니다!"); return; }
                 currentList = wordData.filter(item => wrongWords.includes(item.word));
             } else {
-                currentList = wordData.filter(item => item.day == selectedDay);
+                currentList = wordData.filter(item => item.day == currentSelectedDay);
             }
 
             if (currentList.length === 0) return;
@@ -366,11 +379,11 @@
             currentIndex = 0;
 
             if (currentMode === 'memorize') {
-                document.getElementById('memo-mode-title').innerText = selectedDay === 'wrong' ? "오답 암기" : `Day ${selectedDay} 암기`;
+                document.getElementById('memo-mode-title').innerText = currentSelectedDay === 'wrong' ? "오답 암기" : `Day ${currentSelectedDay} 암기`;
                 showScreen('screen-memorize');
                 loadMemoCard();
             } else {
-                document.getElementById('quiz-mode-title').innerText = selectedDay === 'wrong' ? "오답 퀴즈" : `Day ${selectedDay} 퀴즈`;
+                document.getElementById('quiz-mode-title').innerText = currentSelectedDay === 'wrong' ? "오답 퀴즈" : `Day ${currentSelectedDay} 퀴즈`;
                 showScreen('screen-quiz');
                 loadQuizQuestion();
             }
@@ -397,14 +410,13 @@
 
         // --- 📖 암기 모드 로직 ---
         function loadMemoCard() {
+            // 끝까지 다 본 경우 완료 화면으로 전환
             if (currentIndex >= totalItems) {
-                alert("🎉 이번 파트의 단어 학습을 완료했습니다!");
-                const selectedDay = document.getElementById('day-select').value;
-                if (selectedDay !== 'wrong' && !completedDays.memorize.includes(Number(selectedDay))) {
-                    completedDays.memorize.push(Number(selectedDay));
+                if (currentSelectedDay !== 'wrong' && !completedDays.memorize.includes(Number(currentSelectedDay))) {
+                    completedDays.memorize.push(Number(currentSelectedDay));
                     saveToLocalStorage(); 
                 }
-                showMenu();
+                showMemoCompleteScreen();
                 return;
             }
 
@@ -428,6 +440,7 @@
             }
         }
 
+        // 스와이프 로직
         const cardContainer = document.getElementById('card-container');
         cardContainer.addEventListener('touchstart', e => { 
             touchStartX = e.changedTouches[0].screenX; 
@@ -450,13 +463,55 @@
             }
         }
 
+        // --- 🏁 암기 완료 화면 셋팅 ---
+        function showMemoCompleteScreen() {
+            showScreen('screen-memo-complete');
+            
+            const msgEl = document.getElementById('memo-complete-msg');
+            const btnQuiz = document.getElementById('btn-go-quiz');
+            const btnNextDay = document.getElementById('btn-next-day');
+
+            if (currentSelectedDay === 'wrong') {
+                msgEl.innerText = "오답 노트 암기를 모두 마쳤습니다.";
+                btnQuiz.onclick = () => {
+                    document.getElementById('day-select').value = 'wrong';
+                    currentMode = 'quiz';
+                    startMode();
+                };
+                btnNextDay.style.display = 'none'; // 오답은 다음 파트가 없으므로 숨김
+            } else {
+                const dayNum = Number(currentSelectedDay);
+                msgEl.innerText = `Day ${dayNum} 암기를 모두 마쳤습니다.`;
+
+                btnQuiz.onclick = () => {
+                    document.getElementById('day-select').value = dayNum;
+                    currentMode = 'quiz';
+                    startMode();
+                };
+
+                // 다음 Day가 존재하는지 확인
+                const uniqueDays = [...new Set(wordData.map(item => item.day))].sort((a,b)=>a-b);
+                const nextDay = dayNum + 1;
+                
+                if (uniqueDays.includes(nextDay)) {
+                    btnNextDay.style.display = 'block';
+                    btnNextDay.onclick = () => {
+                        document.getElementById('day-select').value = nextDay;
+                        currentMode = 'memorize';
+                        startMode();
+                    };
+                } else {
+                    btnNextDay.style.display = 'none';
+                }
+            }
+        }
+
         // --- ✍️ 퀴즈 모드 로직 ---
         function loadQuizQuestion() {
             if (currentIndex >= totalItems) {
                 alert("🎉 이번 파트의 퀴즈를 완료했습니다!");
-                const selectedDay = document.getElementById('day-select').value;
-                if (selectedDay !== 'wrong' && !completedDays.quiz.includes(Number(selectedDay))) {
-                    completedDays.quiz.push(Number(selectedDay));
+                if (currentSelectedDay !== 'wrong' && !completedDays.quiz.includes(Number(currentSelectedDay))) {
+                    completedDays.quiz.push(Number(currentSelectedDay));
                     saveToLocalStorage(); 
                 }
                 showMenu(); 
@@ -464,7 +519,6 @@
             }
 
             isAnswered = false;
-            // 버튼을 숨기지 않고 비활성화 상태로 둡니다.
             document.getElementById('next-btn').disabled = true;
             
             const optionsContainer = document.getElementById('options-container');
@@ -505,8 +559,6 @@
                 }
             }
             updateWrongCount();
-            
-            // 답을 고르면 비활성화된 버튼을 클릭 가능하게 활성화시킵니다.
             document.getElementById('next-btn').disabled = false;
         }
 
