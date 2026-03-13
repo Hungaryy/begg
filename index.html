@@ -14,6 +14,8 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            /* 모바일에서 당겨서 새로고침 방지 */
+            overscroll-behavior-y: none; 
         }
         .container {
             background-color: white;
@@ -59,6 +61,7 @@
         .btn-quiz { background-color: #34495e; font-size: 1.2em; padding: 20px; }
         .btn-quiz:hover { background-color: #2c3e50; }
         .btn-wrong-manage { background-color: #8e44ad; margin-top: 15px; }
+        .btn-wrong-manage:hover { background-color: #732d91; }
         
         /* 💾 플로피 디스크 아이콘 버튼 */
         .seed-btn-top {
@@ -88,25 +91,29 @@
         .option-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
         .option-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
         
-        /* 암기 모드(카드) 스타일 */
+        /* 📖 암기 모드(카드) 최적화 스타일 */
         #card-container {
             background-color: #fcfcfc;
             border: 2px solid #eee;
             border-radius: 12px;
-            padding: 30px 20px;
+            padding: 20px;
             margin: 20px 0;
-            min-height: 250px;
+            height: 40vh; /* 카드 높이 고정 (화면 점프 방지) */
+            min-height: 280px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            user-select: none; /* 스와이프 시 텍스트 선택 방지 */
+            user-select: none;
+            overflow-y: auto;
+            /* 좌우 스와이프 시 상하 스크롤 흔들림 방지 */
+            touch-action: pan-y; 
         }
-        .card-word { font-size: 2.5em; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+        .card-word { font-size: 2.3em; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
         .card-meaning { font-size: 1.2em; color: #e74c3c; font-weight: bold; margin-bottom: 25px; }
-        .card-example { font-size: 1em; color: #555; font-style: italic; margin-bottom: 10px; line-height: 1.4; text-align: left; }
-        .card-translation { font-size: 0.95em; color: #7f8c8d; line-height: 1.4; text-align: left; }
+        .card-example { font-size: 1em; color: #555; font-style: italic; margin-bottom: 10px; line-height: 1.4; text-align: left; word-break: keep-all; }
+        .card-translation { font-size: 0.95em; color: #7f8c8d; line-height: 1.4; text-align: left; word-break: keep-all; }
         .highlight { background-color: #ffeaa7; font-weight: bold; color: #d35400; padding: 0 2px; border-radius: 3px; }
-        .swipe-hint { font-size: 0.8em; color: #bdc3c7; margin-top: 10px; }
+        .swipe-hint { font-size: 0.85em; color: #bdc3c7; margin-top: 10px; font-weight: bold; }
 
         /* 모달(팝업) 스타일 */
         .modal-overlay {
@@ -132,14 +139,13 @@
     <div id="screen-menu" class="container active">
         <button class="seed-btn-top" onclick="openSeedModal()">💾</button>
         <h1>📚 스마트 단어장</h1>
-        <div style="font-size: 0.75em; color: #27ae60; font-weight: bold; margin-bottom: 10px;">기기에 오답 자동 저장 중</div>
+        <div style="font-size: 0.75em; color: #27ae60; font-weight: bold; margin-bottom: 10px;">기기에 학습 데이터 자동 저장 중</div>
         <div id="load-status">⏳ 서버에서 단어장을 불러오는 중...</div>
         
         <div class="mode-btn-container">
             <button class="btn-memorize" onclick="showDaySelect('memorize')">📖 암기하기 (단어 학습)</button>
             <button class="btn-quiz" onclick="showDaySelect('quiz')">✍️ 문제 맞추기 (퀴즈)</button>
         </div>
-        <button class="btn-wrong-manage" onclick="showWrongList()">📝 오답 단어 목록 관리</button>
     </div>
 
     <div id="screen-day-select" class="container">
@@ -147,6 +153,9 @@
         <select id="day-select">
             </select>
         <button id="btn-start-action" onclick="startMode()">시작하기</button>
+        
+        <button id="btn-wrong-manage-quiz" class="btn-wrong-manage" style="display: none;" onclick="showWrongList()">📝 오답 단어 목록 보기 및 관리</button>
+        
         <button class="btn-secondary" onclick="showMenu()">뒤로 가기</button>
     </div>
 
@@ -162,7 +171,7 @@
             <div id="card-example" class="card-example"></div>
             <div id="card-translation" class="card-translation"></div>
         </div>
-        <div class="swipe-hint">👈 좌우로 스와이프해서 다음 단어로 👉</div>
+        <div class="swipe-hint">👈 좌우로 화면을 밀어서 넘기세요 👉</div>
         
         <button class="btn-secondary" style="margin-top: 20px;" onclick="showMenu()">도중에 그만하기</button>
     </div>
@@ -187,13 +196,13 @@
             <button onclick="clearAllWrongWords()" style="width: auto; padding: 8px 15px; background-color: #e74c3c; font-size: 0.9em; border-radius: 5px;">전체 일괄 삭제 🗑️</button>
         </div>
         <div id="wrong-list-container"></div>
-        <button class="btn-secondary" onclick="showMenu()">메인으로 돌아가기</button>
+        <button class="btn-secondary" onclick="showDaySelect('quiz')">퀴즈 메뉴로 돌아가기</button>
     </div>
 
     <div id="modal-seed" class="modal-overlay">
         <div class="modal-content">
             <h2>💾 데이터 백업/복원</h2>
-            <p style="font-size: 0.8em; color: #7f8c8d; margin-top: -10px;">(다른 기기로 옮길 때만 사용)</p>
+            <p style="font-size: 0.8em; color: #7f8c8d; margin-top: -10px;">(다른 기기로 데이터를 옮길 때만 사용)</p>
             <button onclick="generateSeed()">초압축 저장코드(Seed) 발급</button>
             <div id="seed-display-area"></div>
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
@@ -204,25 +213,32 @@
     </div>
 
     <script>
-        let wordData = [];      // 단어 정보 보관 (Day, Word, Meaning, Example, Translation)
-        let wrongWords = [];    // 오답 기록 배열
-        let currentList = [];   // 현재 학습 중인 리스트
+        let wordData = [];      
+        let wrongWords = [];    
+        let completedDays = { memorize: [], quiz: [] }; // ✅ 학습 완료 체크 데이터
+
+        let currentList = [];   
         let totalItems = 0;
         let currentIndex = 0;
         let isAnswered = false;
-        let currentMode = '';   // 'memorize' 또는 'quiz'
+        let currentMode = '';   
 
-        // 스와이프를 위한 변수
         let touchStartX = 0;
         let touchEndX = 0;
 
         // --- 자동 저장 로컬 스토리지 ---
-        function saveToLocalStorage() { localStorage.setItem('mySmartWords', JSON.stringify(wrongWords)); }
+        function saveToLocalStorage() { 
+            localStorage.setItem('mySmartWords', JSON.stringify(wrongWords)); 
+            localStorage.setItem('mySmartCompleted', JSON.stringify(completedDays)); 
+        }
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('mySmartWords');
-            if (saved) {
-                try { wrongWords = JSON.parse(saved); updateWrongCount(); } 
-                catch (e) { console.error(e); }
+            const savedWrong = localStorage.getItem('mySmartWords');
+            const savedCompleted = localStorage.getItem('mySmartCompleted');
+            if (savedWrong) {
+                try { wrongWords = JSON.parse(savedWrong); updateWrongCount(); } catch (e) {}
+            }
+            if (savedCompleted) {
+                try { completedDays = JSON.parse(savedCompleted); } catch (e) {}
             }
         }
 
@@ -230,7 +246,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const statusEl = document.getElementById('load-status');
             try {
-                // 두 파일을 동시에 불러옵니다. (examples.txt가 없으면 에러가 나지 않고 빈 텍스트 처리)
                 const [wordsRes, examplesRes] = await Promise.all([
                     fetch('words.txt').catch(() => null),
                     fetch('examples.txt').catch(() => null)
@@ -253,7 +268,6 @@
         });
 
         function parseAndMergeData(wordsText, examplesText) {
-            // 1. words.txt 파싱
             wordData = wordsText.trim().split('\n').map(line => {
                 const parts = line.split('|');
                 if (parts.length >= 3) {
@@ -268,14 +282,12 @@
                 return null;
             }).filter(item => item !== null && !isNaN(item.day));
 
-            // 2. examples.txt 파싱 및 병합 (형식: word | meaning | example | translation)
             if (examplesText) {
                 const exampleLines = examplesText.trim().split('\n');
                 exampleLines.forEach(line => {
                     const parts = line.split('|');
                     if (parts.length >= 4) {
                         const targetWord = parts[0].trim().toLowerCase();
-                        // wordData에서 해당 단어를 찾아 예문 삽입
                         const matchedItem = wordData.find(w => w.word.toLowerCase() === targetWord);
                         if (matchedItem) {
                             matchedItem.example = parts[2].trim();
@@ -284,19 +296,6 @@
                     }
                 });
             }
-            updateDaySelectUI();
-        }
-
-        function updateDaySelectUI() {
-            const selectEl = document.getElementById('day-select');
-            selectEl.innerHTML = '<option value="wrong">⚠️ 내 오답 노트 전용</option>';
-            const uniqueDays = [...new Set(wordData.map(item => item.day))].sort((a,b)=>a-b);
-            uniqueDays.forEach(day => {
-                const option = document.createElement('option');
-                option.value = day;
-                option.textContent = `Day ${day}`;
-                selectEl.appendChild(option);
-            });
         }
 
         // --- 화면 전환 ---
@@ -306,21 +305,40 @@
         }
         function showMenu() { showScreen('screen-menu'); updateWrongCount(); }
 
-        // --- Day 선택창 띄우기 ---
+        // --- Day 선택창 띄우기 (완료 체크(✅) 표시 포함) ---
         function showDaySelect(mode) {
             if (wordData.length === 0) {
                 alert("아직 단어장이 로드되지 않았습니다."); return;
             }
             currentMode = mode;
             document.getElementById('day-select-title').innerText = mode === 'memorize' ? '📖 암기할 파트 선택' : '✍️ 퀴즈 풀 파트 선택';
+            
+            // 퀴즈 탭일 때만 오답 관리 버튼 보이기
+            document.getElementById('btn-wrong-manage-quiz').style.display = (mode === 'quiz') ? 'block' : 'none';
+
+            const selectEl = document.getElementById('day-select');
+            selectEl.innerHTML = '<option value="wrong">⚠️ 내 오답 노트 전용</option>';
+            
+            const uniqueDays = [...new Set(wordData.map(item => item.day))].sort((a,b)=>a-b);
+            uniqueDays.forEach(day => {
+                const option = document.createElement('option');
+                option.value = day;
+                
+                // 모드에 따라 해당 Day 완료 여부 확인 후 체크(✅) 추가
+                let isCompleted = false;
+                if (mode === 'memorize' && completedDays.memorize.includes(day)) isCompleted = true;
+                if (mode === 'quiz' && completedDays.quiz.includes(day)) isCompleted = true;
+                
+                option.textContent = `Day ${day} ${isCompleted ? '✅' : ''}`;
+                selectEl.appendChild(option);
+            });
+
             showScreen('screen-day-select');
         }
 
-        // 모드 시작 버튼
         function startMode() {
             const selectedDay = document.getElementById('day-select').value;
             
-            // 리스트 필터링
             if (selectedDay === 'wrong') {
                 if (wrongWords.length === 0) { alert("오답 노트가 비어있습니다!"); return; }
                 currentList = wordData.filter(item => wrongWords.includes(item.word));
@@ -330,7 +348,6 @@
 
             if (currentList.length === 0) return;
 
-            // 순서 섞기 (퀴즈는 무조건, 암기도 덜 지루하게 섞음)
             currentList = shuffleArray([...currentList]);
             totalItems = currentList.length;
             currentIndex = 0;
@@ -354,16 +371,11 @@
             return array;
         }
 
-        // --- 하이라이트(형광펜) 함수 ---
         function applyHighlight(text, keyword) {
             if (!text || !keyword) return text;
-            
-            // 키워드가 콤마(,)로 구분되어 여러 개인 경우 처리 (예: "지원자, 신청자")
             const keywords = keyword.split(',').map(k => k.trim()).filter(k => k);
             let highlightedText = text;
-            
             keywords.forEach(k => {
-                // 정규식 특수문자 이스케이프 및 대소문자 무시(i) 적용
                 const regex = new RegExp('(' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
                 highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
             });
@@ -372,60 +384,75 @@
 
         // --- 📖 암기 모드 로직 ---
         function loadMemoCard() {
+            // 모든 카드를 다 보았을 때 (완료 처리)
+            if (currentIndex >= totalItems) {
+                alert("🎉 이번 파트의 단어 학습을 완료했습니다!");
+                const selectedDay = document.getElementById('day-select').value;
+                if (selectedDay !== 'wrong' && !completedDays.memorize.includes(Number(selectedDay))) {
+                    completedDays.memorize.push(Number(selectedDay));
+                    saveToLocalStorage(); // 완료 기록 저장
+                }
+                showMenu();
+                return;
+            }
+
             document.getElementById('memo-progress').innerText = `${currentIndex + 1} / ${totalItems}`;
             const item = currentList[currentIndex];
             
             document.getElementById('card-word').textContent = item.word;
             document.getElementById('card-meaning').textContent = item.meaning;
             
-            // 예문과 번역이 있으면 하이라이트를 적용하여 삽입, 없으면 숨김
             const exampleDiv = document.getElementById('card-example');
             const translationDiv = document.getElementById('card-translation');
             
             if (item.example) {
                 exampleDiv.style.display = 'block';
                 translationDiv.style.display = 'block';
-                exampleDiv.innerHTML = applyHighlight(item.example, item.word); // 영단어 하이라이트
-                translationDiv.innerHTML = applyHighlight(item.translation, item.meaning); // 뜻 하이라이트
+                exampleDiv.innerHTML = applyHighlight(item.example, item.word); 
+                translationDiv.innerHTML = applyHighlight(item.translation, item.meaning); 
             } else {
                 exampleDiv.style.display = 'none';
                 translationDiv.style.display = 'none';
             }
         }
 
-        // 스와이프 이벤트 설정 (암기 모드 컨테이너)
+        // 안정적인 스와이프 처리
         const cardContainer = document.getElementById('card-container');
-        cardContainer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+        cardContainer.addEventListener('touchstart', e => { 
+            touchStartX = e.changedTouches[0].screenX; 
+        }, {passive: true});
         cardContainer.addEventListener('touchend', e => {
             touchEndX = e.changedTouches[0].screenX;
             handleSwipe();
         });
 
         function handleSwipe() {
-            const threshold = 50; // 스와이프 민감도
+            const threshold = 50; 
             if (touchStartX - touchEndX > threshold) {
-                // 왼쪽으로 스와이프 -> 다음 단어
-                if (currentIndex < totalItems - 1) {
-                    currentIndex++;
-                    loadMemoCard();
-                } else {
-                    alert("마지막 단어입니다!");
-                }
+                currentIndex++;
+                loadMemoCard(); // 왼쪽 스와이프 (다음 단어)
             } else if (touchEndX - touchStartX > threshold) {
-                // 오른쪽으로 스와이프 -> 이전 단어
                 if (currentIndex > 0) {
                     currentIndex--;
-                    loadMemoCard();
+                    loadMemoCard(); // 오른쪽 스와이프 (이전 단어)
                 }
             }
         }
 
         // --- ✍️ 퀴즈 모드 로직 ---
         function loadQuizQuestion() {
+            // 모든 퀴즈를 맞췄을 때 (완료 처리)
             if (currentIndex >= totalItems) {
-                alert("🎉 이번 파트의 모든 퀴즈를 완료했습니다!");
-                showMenu(); return;
+                alert("🎉 이번 파트의 퀴즈를 완료했습니다!");
+                const selectedDay = document.getElementById('day-select').value;
+                if (selectedDay !== 'wrong' && !completedDays.quiz.includes(Number(selectedDay))) {
+                    completedDays.quiz.push(Number(selectedDay));
+                    saveToLocalStorage(); // 완료 기록 저장
+                }
+                showMenu(); 
+                return;
             }
+
             isAnswered = false;
             document.getElementById('next-btn').style.display = 'none';
             const optionsContainer = document.getElementById('options-container');
