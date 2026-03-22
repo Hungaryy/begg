@@ -14,7 +14,6 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            /* 모바일에서 당겨서 새로고침 방지 */
             overscroll-behavior-y: none; 
         }
         .container {
@@ -63,7 +62,7 @@
         .btn-wrong-manage { background-color: #8e44ad; margin-top: 15px; }
         .btn-wrong-manage:hover { background-color: #732d91; }
         
-        /* 완료 화면 버튼 */
+        /* 완료/결과 화면 버튼 */
         .btn-go-quiz { background-color: #34495e; }
         .btn-go-quiz:hover { background-color: #2c3e50; }
         .btn-next-day { background-color: #27ae60; }
@@ -96,20 +95,6 @@
         .option-btn { background-color: #ecf0f1; color: #333; border: 2px solid #bdc3c7; text-align: left; padding: 15px; line-height: 1.4; }
         .option-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
         .option-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
-        
-        /* 퀴즈 다음 문제 버튼 상태 변경 (흔들림 방지) */
-        #next-btn {
-            margin-top: 20px;
-            background-color: #2ecc71;
-        }
-        #next-btn:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        #next-btn:not(:disabled):hover {
-            background-color: #27ae60;
-        }
 
         /* 📖 암기 모드(카드) 스타일 */
         #card-container {
@@ -145,7 +130,7 @@
         #seed-display-area { background: #eee; padding: 15px; border-radius: 5px; word-break: break-all; display: none; margin-top: 10px; }
         
         /* 오답 리스트 */
-        #wrong-list-container { max-height: 350px; overflow-y: auto; text-align: left; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fafafa; }
+        #wrong-list-container, #quiz-session-wrong-list { max-height: 350px; overflow-y: auto; text-align: left; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fafafa; }
         .wrong-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .wrong-item:last-child { border-bottom: none; }
         .wrong-word-text { font-weight: bold; color: #2c3e50; font-size: 1.1em; }
@@ -169,11 +154,10 @@
 
     <div id="screen-day-select" class="container">
         <h2 id="day-select-title">학습할 파트 선택</h2>
-        <select id="day-select">
-            </select>
+        <select id="day-select"></select>
         <button id="btn-start-action" onclick="startMode()">시작하기</button>
         
-        <button id="btn-wrong-manage-quiz" class="btn-wrong-manage" style="display: none;" onclick="showWrongList()">📝 오답 단어 목록 보기 및 관리</button>
+        <button id="btn-wrong-manage-quiz" class="btn-wrong-manage" style="display: none;" onclick="showWrongList()">📝 전체 오답 단어 목록 관리</button>
         
         <button class="btn-secondary" onclick="showMenu()">뒤로 가기</button>
     </div>
@@ -214,17 +198,27 @@
         <div id="word-display">Loading...</div>
         <div id="options-container"></div>
         
-        <button id="next-btn" disabled onclick="nextQuizQuestion()">다음 문제 ➔</button>
-        <button class="btn-secondary" style="margin-top: 10px;" onclick="showMenu()">도중에 그만하기</button>
+        <button class="btn-secondary" style="margin-top: 20px;" onclick="endQuiz()">종료 및 결과 보기</button>
+    </div>
+
+    <div id="screen-quiz-result" class="container">
+        <h2 style="font-size: 2em; margin-bottom: 10px;">📊 퀴즈 결과</h2>
+        <p id="quiz-score-text" style="font-size: 1.2em; font-weight: bold; color: #3498db; margin-bottom: 20px;"></p>
+        
+        <h3 style="font-size: 1.1em; color: #2c3e50; text-align: left; margin-bottom: 5px;">이번에 틀린 단어</h3>
+        <div id="quiz-session-wrong-list" style="max-height: 250px; margin-bottom: 20px;"></div>
+        
+        <button class="btn-wrong-manage" onclick="showWrongList()">📝 전체 오답 노트 관리로 가기</button>
+        <button class="btn-secondary" onclick="showMenu()">🏠 메인 화면으로</button>
     </div>
 
     <div id="screen-wrong-list" class="container">
-        <h2>📝 오답 노트 관리</h2>
+        <h2>📝 전체 오답 노트 관리</h2>
         <div style="text-align: right; margin-bottom: 10px;">
             <button onclick="clearAllWrongWords()" style="width: auto; padding: 8px 15px; background-color: #e74c3c; font-size: 0.9em; border-radius: 5px;">전체 일괄 삭제 🗑️</button>
         </div>
         <div id="wrong-list-container"></div>
-        <button class="btn-secondary" onclick="showDaySelect('quiz')">퀴즈 메뉴로 돌아가기</button>
+        <button class="btn-secondary" onclick="showMenu()">메인 화면으로</button>
     </div>
 
     <div id="modal-seed" class="modal-overlay">
@@ -250,7 +244,11 @@
         let currentIndex = 0;
         let isAnswered = false;
         let currentMode = '';   
-        let currentSelectedDay = ''; // 현재 학습 중인 Day 저장용
+        let currentSelectedDay = ''; 
+
+        // 퀴즈 결과 트래킹용 변수
+        let sessionCorrectCount = 0;
+        let sessionWrongItems = [];
 
         let touchStartX = 0;
         let touchEndX = 0;
@@ -350,11 +348,9 @@
             uniqueDays.forEach(day => {
                 const option = document.createElement('option');
                 option.value = day;
-                
                 let isCompleted = false;
                 if (mode === 'memorize' && completedDays.memorize.includes(day)) isCompleted = true;
                 if (mode === 'quiz' && completedDays.quiz.includes(day)) isCompleted = true;
-                
                 option.textContent = `Day ${day} ${isCompleted ? '✅' : ''}`;
                 selectEl.appendChild(option);
             });
@@ -377,6 +373,10 @@
             currentList = shuffleArray([...currentList]);
             totalItems = currentList.length;
             currentIndex = 0;
+            
+            // 퀴즈 결과 트래킹 리셋
+            sessionCorrectCount = 0;
+            sessionWrongItems = [];
 
             if (currentMode === 'memorize') {
                 document.getElementById('memo-mode-title').innerText = currentSelectedDay === 'wrong' ? "오답 암기" : `Day ${currentSelectedDay} 암기`;
@@ -410,7 +410,6 @@
 
         // --- 📖 암기 모드 로직 ---
         function loadMemoCard() {
-            // 끝까지 다 본 경우 완료 화면으로 전환
             if (currentIndex >= totalItems) {
                 if (currentSelectedDay !== 'wrong' && !completedDays.memorize.includes(Number(currentSelectedDay))) {
                     completedDays.memorize.push(Number(currentSelectedDay));
@@ -442,85 +441,57 @@
 
         // 스와이프 로직
         const cardContainer = document.getElementById('card-container');
-        cardContainer.addEventListener('touchstart', e => { 
-            touchStartX = e.changedTouches[0].screenX; 
-        }, {passive: true});
-        cardContainer.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
+        cardContainer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+        cardContainer.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
 
         function handleSwipe() {
             const threshold = 50; 
             if (touchStartX - touchEndX > threshold) {
-                currentIndex++;
-                loadMemoCard(); 
+                currentIndex++; loadMemoCard(); 
             } else if (touchEndX - touchStartX > threshold) {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    loadMemoCard(); 
-                }
+                if (currentIndex > 0) { currentIndex--; loadMemoCard(); }
             }
         }
 
-        // --- 🏁 암기 완료 화면 셋팅 ---
         function showMemoCompleteScreen() {
             showScreen('screen-memo-complete');
-            
             const msgEl = document.getElementById('memo-complete-msg');
             const btnQuiz = document.getElementById('btn-go-quiz');
             const btnNextDay = document.getElementById('btn-next-day');
 
             if (currentSelectedDay === 'wrong') {
                 msgEl.innerText = "오답 노트 암기를 모두 마쳤습니다.";
-                btnQuiz.onclick = () => {
-                    document.getElementById('day-select').value = 'wrong';
-                    currentMode = 'quiz';
-                    startMode();
-                };
-                btnNextDay.style.display = 'none'; // 오답은 다음 파트가 없으므로 숨김
+                btnQuiz.onclick = () => { document.getElementById('day-select').value = 'wrong'; currentMode = 'quiz'; startMode(); };
+                btnNextDay.style.display = 'none';
             } else {
                 const dayNum = Number(currentSelectedDay);
                 msgEl.innerText = `Day ${dayNum} 암기를 모두 마쳤습니다.`;
+                btnQuiz.onclick = () => { document.getElementById('day-select').value = dayNum; currentMode = 'quiz'; startMode(); };
 
-                btnQuiz.onclick = () => {
-                    document.getElementById('day-select').value = dayNum;
-                    currentMode = 'quiz';
-                    startMode();
-                };
-
-                // 다음 Day가 존재하는지 확인
                 const uniqueDays = [...new Set(wordData.map(item => item.day))].sort((a,b)=>a-b);
                 const nextDay = dayNum + 1;
                 
                 if (uniqueDays.includes(nextDay)) {
                     btnNextDay.style.display = 'block';
-                    btnNextDay.onclick = () => {
-                        document.getElementById('day-select').value = nextDay;
-                        currentMode = 'memorize';
-                        startMode();
-                    };
+                    btnNextDay.onclick = () => { document.getElementById('day-select').value = nextDay; currentMode = 'memorize'; startMode(); };
                 } else {
                     btnNextDay.style.display = 'none';
                 }
             }
         }
 
-        // --- ✍️ 퀴즈 모드 로직 ---
+        // --- ✍️ 퀴즈 모드 로직 (자동 넘김 적용) ---
         function loadQuizQuestion() {
             if (currentIndex >= totalItems) {
-                alert("🎉 이번 파트의 퀴즈를 완료했습니다!");
                 if (currentSelectedDay !== 'wrong' && !completedDays.quiz.includes(Number(currentSelectedDay))) {
                     completedDays.quiz.push(Number(currentSelectedDay));
                     saveToLocalStorage(); 
                 }
-                showMenu(); 
+                endQuiz(); 
                 return;
             }
 
             isAnswered = false;
-            document.getElementById('next-btn').disabled = true;
-            
             const optionsContainer = document.getElementById('options-container');
             optionsContainer.innerHTML = '';
             
@@ -550,16 +521,26 @@
             
             if (isCorrect) {
                 selectedBtn.classList.add('correct');
+                sessionCorrectCount++;
             } else {
                 selectedBtn.classList.add('wrong');
                 allBtns.forEach(b => { if (b.textContent === currentItem.meaning) b.classList.add('correct'); });
+                
                 if (!wrongWords.includes(currentItem.word)) {
                     wrongWords.push(currentItem.word);
                     saveToLocalStorage();
                 }
+                // 이번 퀴즈에서 틀린 목록에 추가 (결과창 용도)
+                if (!sessionWrongItems.find(w => w.word === currentItem.word)) {
+                    sessionWrongItems.push(currentItem);
+                }
             }
             updateWrongCount();
-            document.getElementById('next-btn').disabled = false;
+            
+            // 0.8초 뒤에 자동으로 다음 문제로 넘어감
+            setTimeout(() => {
+                nextQuizQuestion();
+            }, 800);
         }
 
         function nextQuizQuestion() {
@@ -567,7 +548,33 @@
             loadQuizQuestion();
         }
 
-        // --- 오답 리스트 관리 ---
+        function endQuiz() {
+            showScreen('screen-quiz-result');
+            
+            // 1. 점수 표시
+            document.getElementById('quiz-score-text').innerText = `총 ${currentIndex}문제 중 ${sessionCorrectCount}문제 정답!`;
+            
+            // 2. 이번 세션에 틀린 단어들 표시
+            const listContainer = document.getElementById('quiz-session-wrong-list');
+            listContainer.innerHTML = '';
+
+            if (sessionWrongItems.length === 0) {
+                listContainer.innerHTML = '<div style="text-align: center; color: #27ae60; font-weight: bold; padding: 20px;">이번 퀴즈에서 틀린 단어가 없습니다! 🎉</div>';
+            } else {
+                sessionWrongItems.forEach(item => {
+                    listContainer.innerHTML += `
+                        <div class="wrong-item" style="border-bottom: 1px solid #eee; padding: 10px;">
+                            <div>
+                                <div class="wrong-word-text">${item.word}</div>
+                                <div class="wrong-meaning-text">${item.meaning}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // --- 전체 오답 리스트 관리 ---
         function showWrongList() { showScreen('screen-wrong-list'); renderWrongList(); }
         function renderWrongList() {
             const container = document.getElementById('wrong-list-container');
